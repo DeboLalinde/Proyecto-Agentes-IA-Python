@@ -1,0 +1,7 @@
+Tema vacío: ValueError: El tema no puede estar vacío. | invocaciones: 0
+Falta configuración: ConfiguracionIncompleta: Falta configurar: GOOGLE_API_KEY. | invocaciones: 1
+Cuota: LimiteTemporal: Se alcanzó un límite de cuota. | invocaciones: 1
+Servicio: ServicioNoDisponible: El servicio no está disponible. | invocaciones: 1
+Respuesta vacía: RespuestaVacia: El agente explicador_python no produjo una respuesta de texto. | invocaciones: 1
+Guía inválida: {'ok': False, 'faltantes': ['título', '## Explicación', '## Práctica', '## Revisión', 'bloque de código Python']} | invocaciones: 3
+Fallo de escritura: {'ok': False, 'error': 'no se pudo guardar el archivo: disco lleno (simulado)'} | archivos en salida: []

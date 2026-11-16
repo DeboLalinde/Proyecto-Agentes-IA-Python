@@ -1,5 +1,6 @@
 """Aplicación principal: coordina los agentes y las herramientas."""
 
+import os
 import re
 import unicodedata
 
@@ -9,6 +10,13 @@ from agentes.revisor import crear_agente_revisor
 from herramientas.archivos import guardar_markdown
 from herramientas.validacion import validar_guia
 from runtime.ejecutor import ejecutar_agente
+from runtime.errores import (
+    ConfiguracionIncompleta,
+    LimiteTemporal,
+    ProveedorNoAdmitido,
+    RespuestaVacia,
+    ServicioNoDisponible,
+)
 
 
 def _nombre_archivo(tema):
@@ -19,6 +27,14 @@ def _nombre_archivo(tema):
     return f"guia_{texto or 'tema'}.md"
 
 
+def _invocar(ejecutar, agente, mensaje):
+    """Invoca un agente una sola vez y rechaza una respuesta vacía."""
+    respuesta = ejecutar(agente, mensaje)
+    if not isinstance(respuesta, str) or respuesta.strip() == "":
+        raise RespuestaVacia(f"El agente {agente.name} no produjo una respuesta de texto.")
+    return respuesta
+
+
 def ejecutar_flujo(tema, ejecutar=ejecutar_agente, permitir_correccion=False):
     """Coordina los agentes usando un ejecutor reemplazable en las pruebas."""
     # Paso 1: rechazar un tema vacío antes de invocar agentes
@@ -26,12 +42,18 @@ def ejecutar_flujo(tema, ejecutar=ejecutar_agente, permitir_correccion=False):
         raise ValueError("El tema no puede estar vacío.")
     tema = tema.strip()
 
+    # Los agentes necesitan el nombre del modelo para crearse
+    if not os.getenv("GEMINI_MODEL", "").strip():
+        raise ConfiguracionIncompleta("Falta configurar: GEMINI_MODEL.")
+
     # Paso 2: explicador
-    explicacion = ejecutar(crear_agente_explicador(), f"Explica este tema de Python: {tema}")
+    explicacion = _invocar(
+        ejecutar, crear_agente_explicador(), f"Explica este tema de Python: {tema}"
+    )
 
     # Paso 3: diseñador, con el tema y la explicación
     mensaje_practica = f"Tema: {tema}\n\nExplicación previa:\n{explicacion}"
-    practica = ejecutar(crear_agente_disenador(), mensaje_practica)
+    practica = _invocar(ejecutar, crear_agente_disenador(), mensaje_practica)
 
     # Paso 4: construir el borrador con las respuestas completas
     borrador = (
@@ -41,7 +63,7 @@ def ejecutar_flujo(tema, ejecutar=ejecutar_agente, permitir_correccion=False):
     )
 
     # Paso 5: revisor; su respuesta es la guía final
-    guia_final = ejecutar(crear_agente_revisor(), borrador)
+    guia_final = _invocar(ejecutar, crear_agente_revisor(), borrador)
 
     # Paso 6: validar antes de guardar
     validacion = validar_guia(guia_final)
@@ -60,7 +82,26 @@ def main():
         print("El tema no puede estar vacío.")
         return 1
 
-    resultado = ejecutar_flujo(tema)
+    try:
+        resultado = ejecutar_flujo(tema)
+    except ValueError as error:
+        print(f"Tema no válido: {error}")
+        return 1
+    except ConfiguracionIncompleta as error:
+        print(f"Configuración incompleta: {error} Revisa el archivo .env.")
+        return 1
+    except ProveedorNoAdmitido as error:
+        print(f"Proveedor no admitido: {error}")
+        return 1
+    except LimiteTemporal as error:
+        print(f"Límite de cuota: {error} La ejecución terminó sin reintentar.")
+        return 1
+    except ServicioNoDisponible as error:
+        print(f"Servicio no disponible: {error} La ejecución terminó sin reintentar.")
+        return 1
+    except RespuestaVacia as error:
+        print(f"Respuesta vacía: {error} No se guardó ninguna guía.")
+        return 1
 
     if resultado["ok"]:
         print(f"Guía guardada en: {resultado['ruta']}")
