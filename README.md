@@ -1,9 +1,9 @@
 # Agentes de IA con Python
 
-Documentación de la aplicación. Amplía este README, situado junto a `main.py`,
-con las decisiones, los ejemplos y la reflexión del proyecto.
+Documentación de la aplicación, situada junto a `main.py`, con las decisiones,
+los ejemplos y la reflexión del proyecto.
 
-La imagen creó estos archivos con `iniciar-proyecto`. Consulta la
+La imagen creó los archivos iniciales con `iniciar-proyecto`. Consulta la
 [guía de trabajo con Docker y VS Code](docs/trabajar-con-docker.md).
 
 ## Descripción
@@ -40,7 +40,7 @@ docker run --rm -it --user "$(id -u):$(id -g)" -v "$PWD:/workspace" -w /workspac
   "$AGENTS_IMAGE" \
   python -m pytest -q pruebas/test_entorno.py pruebas/test_runtime.py
 
-# Ejecutar todas las pruebas públicas de las tareas obligatorias durante el proyecto
+# Ejecutar todas las pruebas públicas de las tareas obligatorias
 docker run --rm -it --user "$(id -u):$(id -g)" -v "$PWD:/workspace" -w /workspace \
   "$AGENTS_IMAGE" python -m pytest -q -k 'not extension'
 
@@ -51,10 +51,6 @@ docker run --rm -it --user "$(id -u):$(id -g)" --env-file .env -v "$PWD:/workspa
 
 La prueba de la extensión opcional se ejecuta con `python -m pytest -q pruebas/test_flujo.py`,
 usando el mismo comando Docker y sin el filtro `-k`.
-
-Las pruebas de agentes, archivos, validación y flujo fallan al comienzo porque
-corresponden al trabajo que debes completar. Las pruebas de entorno y runtime
-deben pasar desde el primer momento.
 
 ## Configuración segura de Gemini
 
@@ -97,28 +93,3 @@ Ante un error de cuota (`429`), detén las llamadas y revisa los límites de la
 cuenta antes de una nueva ejecución. Consulta la
 [guía de solución de problemas](https://ai.google.dev/gemini-api/docs/troubleshooting?hl=es-419),
 solamente «Estrategia de reintentos» y «Verifica si tienes el modelo correcto».
-
-## Modo simulado
-
-Las respuestas fijas incluidas permiten comprobar el flujo sin consumir API.
-La calidad de las respuestas a temas diferentes se verifica con ejecuciones reales.
-
-```bash
-docker run --rm -it --user "$(id -u):$(id -g)" --env-file .env -e MODO_SIMULADO=1 \
-  -v "$PWD:/workspace" -w /workspace "$AGENTS_IMAGE" python main.py
-```
-
-## Estructura
-
-- `agentes/`: archivos que completarás para cada agente.
-- `herramientas/`: guardado seguro y validación determinista.
-- `runtime/`: infraestructura de ejecución suministrada.
-- `pruebas/`: pruebas públicas que no consumen API.
-- `ejemplos/`: respuestas fijas y guías de ejemplo.
-- `salida/`: archivos generados, ignorados por Git.
-
-## Recomendaciones de seguridad y privacidad
-
-- Utiliza datos ficticios y limita el contexto enviado a la información necesaria.
-- Mantén la clave en `.env`, excluida de Git, documentación, capturas y mensajes.
-- Si una clave se expone, revócala y reemplázala.
