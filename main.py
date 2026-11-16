@@ -68,6 +68,17 @@ def ejecutar_flujo(tema, ejecutar=ejecutar_agente, permitir_correccion=False):
     # Paso 6: validar antes de guardar
     validacion = validar_guia(guia_final)
 
+    # Extensión: una única corrección adicional, solo si está permitida
+    if not validacion["valida"] and permitir_correccion:
+        lista_faltantes = "\n".join(f"- {faltante}" for faltante in validacion["faltantes"])
+        mensaje_correccion = (
+            "La guía no superó la validación. Corrígela y devuelve la guía completa.\n\n"
+            f"Requisitos faltantes:\n{lista_faltantes}\n\n"
+            f"Guía a corregir:\n\n{guia_final}"
+        )
+        guia_final = _invocar(ejecutar, crear_agente_revisor(), mensaje_correccion)
+        validacion = validar_guia(guia_final)
+
     # Paso 7: si no es válida, informar los faltantes sin guardar
     if not validacion["valida"]:
         return {"ok": False, "faltantes": validacion["faltantes"]}
